@@ -64,6 +64,7 @@
         android:text="Place Bet"
         android:backgroundTint="#1e88e5"
         android:textColor="@color/white"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:onClick="Gamble"/>
 
 </android.support.constraint.ConstraintLayout>
