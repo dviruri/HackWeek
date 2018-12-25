@@ -6,6 +6,7 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+
     <LinearLayout
         android:id="@+id/linear"
         android:layout_width="match_parent"
@@ -13,51 +14,54 @@
         android:orientation="horizontal">
 
         <Button
-            android:id="@+id/greenButton"
+            android:id="@+id/redButton"
             style="@style/Widget.AppCompat.Button.Borderless.Colored"
             android:layout_width="match_parent"
             android:tag="0"
             android:layout_height="wrap_content"
-            android:layout_weight="0.5"
+            android:layout_weight="0.33"
+            android:text="Red"
+            android:textColor="@color/red"
+            android:onClick="selectButton"/>
+
+        <Button
+            android:id="@+id/greenButton"
+            style="@style/Widget.AppCompat.Button.Borderless.Colored"
+            android:layout_width="match_parent"
+            android:tag="1"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.34"
             android:text="Green"
             android:textColor="@color/green"
             android:onClick="selectButton"/>
 
         <Button
-            android:id="@+id/redButton"
+            android:id="@+id/blueButton"
             style="@style/Widget.AppCompat.Button.Borderless.Colored"
             android:layout_width="match_parent"
-            android:tag="1"
+            android:tag="2"
             android:layout_height="wrap_content"
-            android:layout_weight="0.5"
-            android:text="Red"
-            android:textColor="@color/red"
+            android:layout_weight="0.33"
+            android:text="Blue"
+            android:textColor="@color/blue"
             android:onClick="selectButton"/>
 
 
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/device"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/linear"
-        android:text="connected To XXXXX"
-        android:textColor="@color/colorPrimary"
-        android:textSize="20sp"
-        />
-
-    <ImageView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+       <ImageView
+        android:id="@+id/result"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:scaleType="centerInside"
-        app:layout_constraintBottom_toTopOf="parent"
-        app:layout_constraintEnd_toStartOf="parent"
-        app:layout_constraintStart_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/gampleButton"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/linear"
         app:srcCompat="@drawable/unknown" />
 
     <Button
+        android:id="@+id/gampleButton"
         style="@style/Widget.AppCompat.Button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
