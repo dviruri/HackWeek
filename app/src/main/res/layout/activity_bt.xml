@@ -9,12 +9,22 @@
     <ImageView
         android:id="@+id/imageView"
         android:layout_width="match_parent"
-        android:layout_height="70dp"
-        android:scaleType="centerCrop"
-        android:src="@drawable/gamble"
+        android:layout_height="250dp"
+        android:scaleType="fitXY"
+        android:src="@drawable/logo2"
         app:layout_constraintTop_toTopOf="parent"
         android:theme="@style/Base.TextAppearance.AppCompat" />
 
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text = "Select Device:"
+        android:textSize="40sp"
+        android:gravity="center_horizontal"
+        android:textColor="@color/white"
+        app:layout_constraintBottom_toTopOf="@id/listView"
+        android:layout_marginBottom="10dp"
+        />
 
     <ListView
         android:id="@+id/listView"
