@@ -6,33 +6,39 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.media.AudioManager;
+import android.media.SoundPool;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.Window;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Set;
 import java.util.UUID;
 
-import static java.lang.Thread.sleep;
-
 public class MainActivity extends AppCompatActivity {
 
 
-private int[] _alertDialogs = new int[] {R.layout.winner_dialog_red,R.layout.winner_dialog_green,R.layout.winner_dialog_blue,R.layout.loser_dialog_red,R.layout.loser_dialog_green,R.layout.loser_dialog_blue};
-private int[] _results = new int[] {R.drawable.winner_red,R.drawable.winner_green,R.drawable.winner_blue,R.drawable.loser_red,R.drawable.loser_green,R.drawable.loser_blue};
+    // Helpful Constants
+    private final int NR_OF_SIMULTANEOUS_SOUNDS = 1;
+    private final float LEFT_VOLUME = 1.0f;
+    private final float RIGHT_VOLUME = 1.0f;
+    private final int NO_LOOP = 0;
+    private final int PRIORITY = 0;
+    private final float NORMAL_PLAY_RATE = 1.0f;
+
+    private SoundPool mSoundPool;
+    private int winSoundId;
+    private int loseSoundId;
+
+    private int[] _results = new int[]{R.drawable.red,R.drawable.green,R.drawable.blue};
 private int selected = -1;
 private Button[] buttons ;
 private int[] colors;
@@ -41,6 +47,9 @@ private static final UUID BTMODULEUUID = UUID.fromString("00001101-0000-1000-800
     BluetoothSocket mmSocket;
     private int selectedDevice;
     private Button gambleButton;
+    ProgressDialog progressDialog;
+    int winner;
+    private ImageView resultText;
 
 
     @Override
@@ -54,11 +63,17 @@ private static final UUID BTMODULEUUID = UUID.fromString("00001101-0000-1000-800
         buttons = new Button[] {(Button)findViewById(R.id.redButton),(Button)findViewById(R.id.greenButton),(Button)findViewById(R.id.blueButton)};
         colors = new int[] {getResources().getColor(R.color.red),getResources().getColor(R.color.green),getResources().getColor(R.color.blue)};
 
+        resultText = (ImageView)findViewById(R.id.resultText);
 
+        resultText.setVisibility(View.GONE);
         gambleButton = (Button)findViewById(R.id.gampleButton);
         gambleButton.setEnabled(true);
         gambleButton.setClickable(true);
         gambleButton.setAlpha(1);
+
+        mSoundPool = new SoundPool(NR_OF_SIMULTANEOUS_SOUNDS,AudioManager.STREAM_MUSIC,0);
+        winSoundId = mSoundPool.load(getApplicationContext(),R.raw.winner,1);
+        loseSoundId = mSoundPool.load(getApplicationContext(),R.raw.loser,1);
     }
 
     private void resetButtons(int index)
@@ -95,6 +110,9 @@ private static final UUID BTMODULEUUID = UUID.fromString("00001101-0000-1000-800
             gambleButton.setEnabled(false);
             gambleButton.setClickable(false);
             gambleButton.setAlpha(0.5f);
+            resultText.setVisibility(View.GONE);
+            final ImageView img = (ImageView) findViewById(R.id.result);
+            img.setImageResource(R.drawable.unknown);
             new GambleAsyncTask().execute();
         }
         else
@@ -113,65 +131,64 @@ private static final UUID BTMODULEUUID = UUID.fromString("00001101-0000-1000-800
 
     }
 
-    ProgressDialog progressDialog;
-    int winner;
 
-    private void Reset()
-    {
-        final ImageView img = (ImageView) findViewById(R.id.result);
-        img.setImageResource(R.drawable.red);
-        gambleButton.setEnabled(true);
-        gambleButton.setClickable(true);
-        gambleButton.setAlpha(1);
-    }
+    /*
+        private void Reset()
+        {
+            final ImageView img = (ImageView) findViewById(R.id.result);
+            img.setImageResource(R.drawable.red);
+            gambleButton.setEnabled(true);
+            gambleButton.setClickable(true);
+            gambleButton.setAlpha(1);
+        }
 
-    private void showWinnerDialog()
-    {
-        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-        builder.setPositiveButton("Try Again", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                Reset();
-            }
-        });
+        private void showWinnerDialog()
+        {
+            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+            builder.setPositiveButton("Try Again", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    Reset();
+                }
+            });
 
-        final int Layout = winner==selected ? _alertDialogs[winner]: _alertDialogs[winner+3];
+            final int Layout = winner==selected ? _alertDialogs[winner]: _alertDialogs[winner+3];
 
-        final AlertDialog dialog = builder.create();
-        LayoutInflater inflater = getLayoutInflater();
-        View dialogLayout = inflater.inflate(Layout, null);
-        dialog.setView(dialogLayout);
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+            final AlertDialog dialog = builder.create();
+            LayoutInflater inflater = getLayoutInflater();
+            View dialogLayout = inflater.inflate(Layout, null);
+            dialog.setView(dialogLayout);
+            dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
 
-        final int Image = winner==selected ? _results[winner] : _results[winner+3];
+            final int Image = winner==selected ? _results[winner] : _results[winner+3];
 
-        dialog.show();
-
+            dialog.show();
 
 
-        dialog.setOnShowListener(new DialogInterface.OnShowListener() {
-            @Override
-            public void onShow(DialogInterface d) {
-                ImageView image = (ImageView) dialog.findViewById(R.id.goProDialogImage);
-                Bitmap icon = BitmapFactory.decodeResource(MainActivity.this.getResources(),
-                        Image);
-                float imageWidthInPX = (float)image.getWidth();
 
-                LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(Math.round(imageWidthInPX),
-                        Math.round(imageWidthInPX * (float)icon.getHeight() / (float)icon.getWidth()));
-                image.setLayoutParams(layoutParams);
+            dialog.setOnShowListener(new DialogInterface.OnShowListener() {
+                @Override
+                public void onShow(DialogInterface d) {
+                    ImageView image = (ImageView) dialog.findViewById(R.id.goProDialogImage);
+                    Bitmap icon = BitmapFactory.decodeResource(MainActivity.this.getResources(),
+                            Image);
+                    float imageWidthInPX = (float)image.getWidth();
+
+                    LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(Math.round(imageWidthInPX),
+                            Math.round(imageWidthInPX * (float)icon.getHeight() / (float)icon.getWidth()));
+                    image.setLayoutParams(layoutParams);
 
 
-            }
-        });
-    }
-
+                }
+            });
+        }
+    */
     private class GambleAsyncTask extends AsyncTask<Void, Void, Void> {
         @Override
         protected void onPreExecute() {
-       /*     progressDialog = new ProgressDialog(MainActivity.this);
-            progressDialog.setMessage("Please wait...");
-            progressDialog.show(); */
+            progressDialog = new ProgressDialog(MainActivity.this);
+            progressDialog.setMessage("Spin in Progress...");
+            progressDialog.show();  /*
             try
             {
                 Animation rotate = AnimationUtils.loadAnimation(MainActivity.this, R.anim.rotate_image);
@@ -265,7 +282,7 @@ private static final UUID BTMODULEUUID = UUID.fromString("00001101-0000-1000-800
             } catch (Exception e)
             {
 
-            }
+            }  */
             super.onPreExecute();
         }
 
@@ -285,12 +302,29 @@ private static final UUID BTMODULEUUID = UUID.fromString("00001101-0000-1000-800
         }
 
         protected void onPostExecute(Void result) {
-
-          /*  if (winner == selected) {
-                img.setImageResource(R.drawable.winner);
+            final ImageView img = (ImageView) findViewById(R.id.result);
+            img.setImageResource(_results[winner]);
+            if (progressDialog.isShowing()) progressDialog.dismiss();
+            if (winner == selected) {
+                resultText.setImageResource(R.drawable.winner22);
             } else {
-                img.setImageResource(R.drawable.loser);
-            } */
+                resultText.setImageResource(R.drawable.loser22);
+            }
+            resultText.setVisibility(View.VISIBLE);
+            gambleButton.setAlpha(1);
+            gambleButton.setEnabled(true);
+            gambleButton.setClickable(true);
+            Animation pulse = AnimationUtils.loadAnimation(MainActivity.this, R.anim.pulse);
+            resultText.startAnimation(pulse);
+
+            if (winner == selected) {
+                mSoundPool.play(winSoundId,LEFT_VOLUME,RIGHT_VOLUME,PRIORITY,NO_LOOP,NORMAL_PLAY_RATE);
+            } else {
+                mSoundPool.play(loseSoundId,LEFT_VOLUME,RIGHT_VOLUME,PRIORITY,NO_LOOP,NORMAL_PLAY_RATE);
+            }
+
+
+
 
             //move activity
             super.onPostExecute(result);
@@ -315,7 +349,7 @@ private static final UUID BTMODULEUUID = UUID.fromString("00001101-0000-1000-800
             try {
                 mmSocket = bt.createInsecureRfcommSocketToServiceRecord(BTMODULEUUID);
                 mmSocket.connect();
-                Thread.sleep(3000);
+                Thread.sleep(1500);
             }
             catch (Exception e)
             {
